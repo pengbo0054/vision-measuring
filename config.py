@@ -1,0 +1,9 @@
+class Config(object):
+    
+    BLUR_KERNEL_SIZE = 9
+    SOBEL_KERNEL_SIZE = -1
+    BINARY_THRESHOLD_1ST = 90
+    BINARY_THRESHOLD_2ND = 255
+    ERODE_ITER = 14
+    DILATE_ITER = 14
+    GSE_KERNEL_SIZE = 25
