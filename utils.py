@@ -1,5 +1,6 @@
 import cv2
 import imutils
+import os
 
 import numpy as np
 
@@ -8,6 +9,7 @@ from imutils import contours
 from imutils import perspective
 from scipy.spatial import distance as dist
 import ipdb
+
 
 def mark_countor(
     image_path,
@@ -18,14 +20,22 @@ def mark_countor(
     erode_iter=Config.ERODE_ITER,
     dilate_iter=Config.DILATE_ITER,
     gse_ksize=Config.GSE_KERNEL_SIZE
-    ):
+):
 
-    image = cv2.imread(image_path, 1)
+    image = cv2.imread(image_path)
     image = CreateNewImg(image)
-    cv2.imshow('test',image/255)
-    cv2.waitKey(0)
+
+    # a trick for tmp image
+    cv2.imwrite(image_path + '.jpg', image)
+    img = cv2.imread(image_path + '.jpg')
+    os.remove(image_path + '.jpg')
+
+    # ipdb.set_trace()
+    # cv2.imshow('test',image/255)
+    # cv2.waitKey(0)
     # convert image to gray scale
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
     # apply sobel filter
     gradX = cv2.Sobel(gray, ddepth=cv2.CV_32F, dx=1, dy=0, ksize=sobel_ksize)
@@ -38,17 +48,17 @@ def mark_countor(
     # average blur and set a threshold
     blurred = cv2.blur(gradient, (blur_ksize, blur_ksize))
     (_, thresh) = cv2.threshold(blurred, bin_threshold_1st, bin_threshold_2nd, cv2.THRESH_BINARY)
-    
-    ## to fill the binary image
-    #kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (gse_ksize, gse_ksize))
-    #closed = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)
 
-    ## erosions and dilations
-    #closed = cv2.erode(closed, None, iterations=erode_iter)
-    #closed = cv2.dilate(closed, None, iterations=dilate_iter)
-    #cv2.imshow('test',closed)
-    #cv2.waitKey(0)
-    #ipdb.set_trace()
+    # to fill the binary image
+    # kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (gse_ksize, gse_ksize))
+    # closed = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)
+
+    # erosions and dilations
+    # closed = cv2.erode(closed, None, iterations=erode_iter)
+    # closed = cv2.dilate(closed, None, iterations=dilate_iter)
+    # cv2.imshow('test',closed)
+    #  cv2.waitKey(0)
+    # ipdb.set_trace()
 
     # to find all object contours
     cnts = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -62,8 +72,9 @@ def mark_countor(
 
     return (img, cnts, pixelsPerMetric)
 
+
 def visual(image, cnt, pixelsPerMetric, width):
-    
+
     # compute the rotated bounding box of the contour
     original = image.copy()
     rect = cv2.minAreaRect(cnt)
@@ -85,7 +96,7 @@ def visual(image, cnt, pixelsPerMetric, width):
     (topleft, topright, bottomright, bottomleft) = rect
 
     def mid(A, B):
-        return ((A[0] + B[0])/2, (A[1] + B[1])/2)
+        return ((A[0] + B[0]) / 2, (A[1] + B[1]) / 2)
 
     (topX, topY) = mid(topleft, topright)
     (bottomX, bottomY) = mid(bottomleft, bottomright)
@@ -101,10 +112,8 @@ def visual(image, cnt, pixelsPerMetric, width):
     cv2.circle(original, (int(rightX), int(rightY)), 5, (255, 0, 0), -1)
 
     # visual the boject lenth and width
-    cv2.line(original, (int(topX), int(topY)), (int(bottomX), int(bottomY)),
-        (255, 0, 255), 2)
-    cv2.line(original, (int(leftX), int(leftY)), (int(rightX), int(rightY)),
-        (255, 0, 255), 2)
+    cv2.line(original, (int(topX), int(topY)), (int(bottomX), int(bottomY)), (255, 0, 255), 2)
+    cv2.line(original, (int(leftX), int(leftY)), (int(rightX), int(rightY)), (255, 0, 255), 2)
     # compute the 2D EU distance between the midpoints
     dA = dist.euclidean((topX, topY), (bottomX, bottomY))
     dB = dist.euclidean((leftX, leftY), (rightX, rightY))
@@ -117,36 +126,35 @@ def visual(image, cnt, pixelsPerMetric, width):
     lenB = dB / pixelsPerMetric
 
     # present
-    cv2.putText(original, "{:.2f}cm".format(lenA),
-        (int(topX - 15), int(topY - 10)), cv2.FONT_HERSHEY_SIMPLEX,
-        0.65, (255, 255, 255), 2)
-    cv2.putText(original, "{:.2f}cm".format(lenB),
-        (int(rightX + 10), int(rightY)), cv2.FONT_HERSHEY_SIMPLEX,
-        0.65, (255, 255, 255), 2)
+    cv2.putText(original, "{:.2f}cm".format(lenA), (int(topX - 15), int(topY - 10)), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (255, 255, 255), 2)
+    cv2.putText(original, "{:.2f}cm".format(lenB), (int(rightX + 10), int(rightY)), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (255, 255, 255), 2)
 
     cv2.imshow("Image", original)
     cv2.waitKey(0)
 
 
 def ComputeHist(img):
-    h,w = img.shape
-    hist, bin_edge = np.histogram(img.reshape(1,w*h), bins=list(range(257)))
+    h, w = img.shape
+    hist, _ = np.histogram(img.reshape(1, w * h), bins=list(range(257)))
     return hist
-    
+
+
 def ComputeMinLevel(hist, rate, pnum):
     sum = 0
     for i in range(256):
         sum += hist[i]
         if (sum >= (pnum * rate * 0.01)):
             return i
-            
+
+
 def ComputeMaxLevel(hist, rate, pnum):
     sum = 0
     for i in range(256):
-        sum += hist[255-i]
+        sum += hist[255 - i]
         if (sum >= (pnum * rate * 0.01)):
-            return 255-i
-            
+            return 255 - i
+
+
 def LinearMap(minlevel, maxlevel):
     if (minlevel >= maxlevel):
         return []
@@ -158,22 +166,21 @@ def LinearMap(minlevel, maxlevel):
             elif (i > maxlevel):
                 newmap[i] = 255
             else:
-                newmap[i] = (i-minlevel)/(maxlevel-minlevel) * 255
+                newmap[i] = (i - minlevel) / (maxlevel - minlevel) * 255
         return newmap
-        
+
+
 def CreateNewImg(img):
-    h,w,d = img.shape
-    newimg = np.zeros([h,w,d])
+    h, w, d = img.shape
+    newimg = np.zeros([h, w, d])
     for i in range(d):
-        imgmin = np.min(img[:,:,i])
-        imgmax = np.max(img[:,:,i])
-        imghist = ComputeHist(img[:,:,i])
-        minlevel = ComputeMinLevel(imghist, 85, h*w)
-        maxlevel = ComputeMaxLevel(imghist, 4, h*w)
-        newmap = LinearMap(minlevel,maxlevel)
+        imghist = ComputeHist(img[:, :, i])
+        minlevel = ComputeMinLevel(imghist, 85, h * w)
+        maxlevel = ComputeMaxLevel(imghist, 4, h * w)
+        newmap = LinearMap(minlevel, maxlevel)
         # print(minlevel, maxlevel)
-        if (newmap.size ==0 ):
+        if (newmap.size == 0):
             continue
         for j in range(h):
-            newimg[j,:,i] = newmap[img[j,:, i]]
+            newimg[j, :, i] = newmap[img[j,:, i]]
     return newimg
