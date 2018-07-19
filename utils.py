@@ -84,15 +84,12 @@ def visual(image, cnt, pixelsPerMetric, width):
     # order the contour as (top-left, top-right, bottom-right, bottom-left)
 
     rect = perspective.order_points(rect)
-    cv2.drawContours(original, [rect.astype("int")], -1, (0, 255, 0), 2)
+    cv2.drawContours(original, [rect.astype("int")], -1, (0, 255, 0), 1)
 
     # loop over the original points and draw them
     for (x, y) in rect:
-        cv2.circle(original, (int(x), int(y)), 5, (0, 0, 255), -1)
+        cv2.circle(original, (int(x), int(y)), 2, (0, 0, 255), -1)
 
-    # unpack the ordered bounding box, then compute the midpoint
-    # between the top-left and top-right coordinates, followed by
-    # the midpoint between bottom-left and bottom-right coordinates
     (topleft, topright, bottomright, bottomleft) = rect
 
     def mid(A, B):
@@ -106,14 +103,14 @@ def visual(image, cnt, pixelsPerMetric, width):
     (rightX, rightY) = mid(topright, bottomright)
 
     # visual the middle-point
-    cv2.circle(original, (int(topX), int(topY)), 5, (255, 0, 0), -1)
-    cv2.circle(original, (int(bottomX), int(bottomY)), 5, (255, 0, 0), -1)
-    cv2.circle(original, (int(leftX), int(leftY)), 5, (255, 0, 0), -1)
-    cv2.circle(original, (int(rightX), int(rightY)), 5, (255, 0, 0), -1)
+    cv2.circle(original, (int(topX), int(topY)), 2, (255, 0, 0), -1)
+    cv2.circle(original, (int(bottomX), int(bottomY)), 2, (255, 0, 0), -1)
+    cv2.circle(original, (int(leftX), int(leftY)), 2, (255, 0, 0), -1)
+    cv2.circle(original, (int(rightX), int(rightY)), 2, (255, 0, 0), -1)
 
     # visual the boject lenth and width
-    cv2.line(original, (int(topX), int(topY)), (int(bottomX), int(bottomY)), (255, 0, 255), 2)
-    cv2.line(original, (int(leftX), int(leftY)), (int(rightX), int(rightY)), (255, 0, 255), 2)
+    cv2.line(original, (int(topX), int(topY)), (int(bottomX), int(bottomY)), (255, 0, 255), 1)
+    cv2.line(original, (int(leftX), int(leftY)), (int(rightX), int(rightY)), (255, 0, 255), 1)
     # compute the 2D EU distance between the midpoints
     dA = dist.euclidean((topX, topY), (bottomX, bottomY))
     dB = dist.euclidean((leftX, leftY), (rightX, rightY))
