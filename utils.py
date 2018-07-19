@@ -84,11 +84,11 @@ def visual(image, cnt, pixelsPerMetric, width):
     # order the contour as (top-left, top-right, bottom-right, bottom-left)
 
     rect = perspective.order_points(rect)
-    cv2.drawContours(original, [rect.astype("int")], -1, (0, 255, 0), 1)
+    cv2.drawContours(original, [rect.astype("int")], -1, (255, 0, 0), 1)
 
     # loop over the original points and draw them
     for (x, y) in rect:
-        cv2.circle(original, (int(x), int(y)), 2, (0, 0, 255), -1)
+        cv2.circle(original, (int(x), int(y)), 2, (255, 0, 0), -1)
 
     (topleft, topright, bottomright, bottomleft) = rect
 
@@ -109,8 +109,8 @@ def visual(image, cnt, pixelsPerMetric, width):
     cv2.circle(original, (int(rightX), int(rightY)), 2, (255, 0, 0), -1)
 
     # visual the boject lenth and width
-    cv2.line(original, (int(topX), int(topY)), (int(bottomX), int(bottomY)), (255, 0, 255), 1)
-    cv2.line(original, (int(leftX), int(leftY)), (int(rightX), int(rightY)), (255, 0, 255), 1)
+    cv2.line(original, (int(topX), int(topY)), (int(bottomX), int(bottomY)), (255, 0, 0), 1)
+    cv2.line(original, (int(leftX), int(leftY)), (int(rightX), int(rightY)), (255, 0, 0), 1)
     # compute the 2D EU distance between the midpoints
     dA = dist.euclidean((topX, topY), (bottomX, bottomY))
     dB = dist.euclidean((leftX, leftY), (rightX, rightY))
