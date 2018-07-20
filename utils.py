@@ -54,9 +54,6 @@ def mark_countor(
     # erosions and dilations
     # closed = cv2.erode(closed, None, iterations=erode_iter)
     # closed = cv2.dilate(closed, None, iterations=dilate_iter)
-    # cv2.imshow('test',closed)
-    #  cv2.waitKey(0)
-    # ipdb.set_trace()
 
     # to find all object contours
     cnts = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -168,6 +165,7 @@ class ContrastImage(object):
             
             return minlevel, maxlevel
         
+        # loop through the image depth
         for num_layer in range(self.depth):
             
             hist, _ = np.histogram(self.image[:, :, num_layer].reshape(1, self.height * self.width), bins=list(range(257)))
