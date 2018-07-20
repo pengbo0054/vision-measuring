@@ -8,6 +8,7 @@ from config import Config
 from imutils import contours
 from imutils import perspective
 from scipy.spatial import distance as dist
+
 import ipdb
 
 
@@ -23,16 +24,13 @@ def mark_countor(
 ):
 
     image = cv2.imread(image_path)
-    image = CreateNewImg(image)
+    image = ContrastImage(image).AdjustContrast()
 
     # a trick for tmp image
     cv2.imwrite(image_path + '.jpg', image)
     img = cv2.imread(image_path + '.jpg')
     os.remove(image_path + '.jpg')
 
-    # ipdb.set_trace()
-    # cv2.imshow('test',image/255)
-    # cv2.waitKey(0)
     # convert image to gray scale
 
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -130,54 +128,59 @@ def visual(image, cnt, pixelsPerMetric, width):
     cv2.waitKey(0)
 
 
-def ComputeHist(img):
-    h, w = img.shape
-    hist, _ = np.histogram(img.reshape(1, w * h), bins=list(range(257)))
-    return hist
+class ContrastImage(object):
+    
+    # initialize the object
+    def __init__(self,image):
+        
+        self.image = image
+        self.height, self.width, self.depth = self.image.shape
+        
+        self.minrate = Config.CONTRAST_MIN_RATE
+        self.maxrate = Config.CONTRAST_MAX_RATE
 
+    # a method to adjust contrast ratio
+    def AdjustContrast(self):
+        
+        ones = np.ones((self.height, self.width))
 
-def ComputeMinLevel(hist, rate, pnum):
-    sum = 0
-    for i in range(256):
-        sum += hist[i]
-        if (sum >= (pnum * rate * 0.01)):
-            return i
+        
+        def ComputeMinLevel(hist):
+            sum = 0
+            for i in range(256):
+                sum += hist[i]
+                if (sum >= (self.height * self.width * self.minrate * 0.01)):
+                    return i
 
+        def ComputeMaxLevel(hist):
+            sum = 0
+            for i in range(256):
+                sum += hist[255 - i]
+                if (sum >= (self.height * self.width * self.maxrate * 0.01)):
+                    return 255 - i
 
-def ComputeMaxLevel(hist, rate, pnum):
-    sum = 0
-    for i in range(256):
-        sum += hist[255 - i]
-        if (sum >= (pnum * rate * 0.01)):
-            return 255 - i
+        for num_layer in range(self.depth):
+            
+            hist, _ = np.histogram(self.image[:, :, num_layer].reshape(1, self.height * self.width), bins=list(range(257)))
 
+            minlevel = ComputeMinLevel(hist)
+            maxlevel = ComputeMaxLevel(hist)
+            #minlevel = np.ceil(np.percentile(hist, self.minrate))
+            #maxlevel = np.floor(np.percentile(hist, self.maxrate))
+            assert maxlevel > minlevel, 'MaxLevel is smaller than MinLevel'
+            min_matrix = minlevel * ones
+            max_matrix = maxlevel * ones
+            
+            # obtain bool matrix
+            minbool = self.image[:, :, num_layer] < min_matrix
+            maxbool = self.image[:, :, num_layer] > max_matrix
 
-def LinearMap(minlevel, maxlevel):
-    if (minlevel >= maxlevel):
-        return []
-    else:
-        newmap = np.zeros(256)
-        for i in range(256):
-            if (i < minlevel):
-                newmap[i] = 0
-            elif (i > maxlevel):
-                newmap[i] = 255
-            else:
-                newmap[i] = (i - minlevel) / (maxlevel - minlevel) * 255
-        return newmap
-
-
-def CreateNewImg(img):
-    h, w, d = img.shape
-    newimg = np.zeros([h, w, d])
-    for i in range(d):
-        imghist = ComputeHist(img[:, :, i])
-        minlevel = ComputeMinLevel(imghist, 85, h * w)
-        maxlevel = ComputeMaxLevel(imghist, 4, h * w)
-        newmap = LinearMap(minlevel, maxlevel)
-        # print(minlevel, maxlevel)
-        if (newmap.size == 0):
-            continue
-        for j in range(h):
-            newimg[j, :, i] = newmap[img[j,:, i]]
-    return newimg
+            # matrix operation
+            # convert elements less than minlevel to 0
+            self.image[:, :, num_layer] = (ones - (ones * minbool)) * self.image[:, :, num_layer]
+            # convert elements more than maxlevel to 255
+            self.image[:, :, num_layer] = ones * ~maxbool * self.image[:, :, num_layer] + ones * maxbool * 255
+            # apply normalization to elements between above 2 levels eg.(x-min/max-min)
+            self.image[:, :, num_layer] = (self.image[:, :, num_layer] - (~minbool * ~maxbool) * minlevel) / ((~minbool * ~maxbool) * (maxlevel - minlevel) +ones * (1 - (~minbool * ~maxbool))) * ((~minbool * ~maxbool) * 254 + ones)
+        
+        return self.image

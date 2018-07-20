@@ -10,7 +10,7 @@ def main(args):
 
     for cnt in cnts:
         # ignore the contour if the area is small(noise)
-        if cv2.contourArea(cnt) < 2500:
+        if cv2.contourArea(cnt) < 5000:
             continue
 
         visual(image, cnt, pixelsPerMetric, args['width'])

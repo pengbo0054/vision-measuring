@@ -7,3 +7,8 @@ class Config(object):
     ERODE_ITER = 14
     DILATE_ITER = 14
     GSE_KERNEL_SIZE = 25
+    AREA_THRESHOLD = 5000
+
+    #Contrast ratio config
+    CONTRAST_MIN_RATE = 85
+    CONTRAST_MAX_RATE = 4
