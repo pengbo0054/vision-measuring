@@ -10,5 +10,5 @@ class Config(object):
     AREA_THRESHOLD = 5000
 
     #Contrast ratio config
-    CONTRAST_MIN_RATE = 85
-    CONTRAST_MAX_RATE = 4
+    CONTRAST_MIN_RATE = 0.85
+    CONTRAST_MAX_RATE = 0.04

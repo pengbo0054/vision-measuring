@@ -144,29 +144,36 @@ class ContrastImage(object):
         
         ones = np.ones((self.height, self.width))
 
+        # return index of accumulative sum of certain ratio
+        def ComputeLevel(hist,minrate,maxrate):
+            
+            hist = list(hist)
+            
+            hist_ = [sum(hist[:i]) for i in range(len(hist))]
+            
+            min = minrate * self.height * self.width
+            max = (1 - maxrate) * self.height * self.width
+            
+            tmpmin = hist_.copy()
+            tmpmax = hist_.copy()
+            
+            tmpmin.append(min)
+            tmpmax.append(max)
+            
+            tmpmin.sort()
+            tmpmax.reverse()
+            
+            minlevel = tmpmin.index(min) - 1
+            maxlevel = 255 - tmpmax.index(max) - 1
+            
+            return minlevel, maxlevel
         
-        def ComputeMinLevel(hist):
-            sum = 0
-            for i in range(256):
-                sum += hist[i]
-                if (sum >= (self.height * self.width * self.minrate * 0.01)):
-                    return i
-
-        def ComputeMaxLevel(hist):
-            sum = 0
-            for i in range(256):
-                sum += hist[255 - i]
-                if (sum >= (self.height * self.width * self.maxrate * 0.01)):
-                    return 255 - i
-
         for num_layer in range(self.depth):
             
             hist, _ = np.histogram(self.image[:, :, num_layer].reshape(1, self.height * self.width), bins=list(range(257)))
 
-            minlevel = ComputeMinLevel(hist)
-            maxlevel = ComputeMaxLevel(hist)
-            #minlevel = np.ceil(np.percentile(hist, self.minrate))
-            #maxlevel = np.floor(np.percentile(hist, self.maxrate))
+            minlevel, maxlevel = ComputeLevel(hist, self.minrate, self.maxrate)
+            
             assert maxlevel > minlevel, 'MaxLevel is smaller than MinLevel'
             min_matrix = minlevel * ones
             max_matrix = maxlevel * ones
@@ -184,3 +191,4 @@ class ContrastImage(object):
             self.image[:, :, num_layer] = (self.image[:, :, num_layer] - (~minbool * ~maxbool) * minlevel) / ((~minbool * ~maxbool) * (maxlevel - minlevel) +ones * (1 - (~minbool * ~maxbool))) * ((~minbool * ~maxbool) * 254 + ones)
         
         return self.image
+
