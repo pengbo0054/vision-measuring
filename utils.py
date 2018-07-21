@@ -9,8 +9,6 @@ from imutils import contours
 from imutils import perspective
 from scipy.spatial import distance as dist
 
-import ipdb
-
 
 def mark_countor(
     image_path,
