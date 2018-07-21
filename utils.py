@@ -45,15 +45,16 @@ def mark_countor(
 
     # average blur and set a threshold
     blurred = cv2.blur(gradient, (blur_ksize, blur_ksize))
-    (_, thresh) = cv2.threshold(blurred, bin_threshold_1st, bin_threshold_2nd, cv2.THRESH_BINARY)
-
-    # to fill the binary image
-    # kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (gse_ksize, gse_ksize))
-    # closed = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)
-
-    # erosions and dilations
-    # closed = cv2.erode(closed, None, iterations=erode_iter)
-    # closed = cv2.dilate(closed, None, iterations=dilate_iter)
+    
+    # erode and dilate operation
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (gse_ksize, gse_ksize))
+    closed = cv2.morphologyEx(blurred, cv2.MORPH_CLOSE, kernel) 
+    closed = cv2.erode(closed, None, iterations=erode_iter)
+    closed = cv2.dilate(closed, None, iterations=dilate_iter)
+    
+    cv2.imshow('test',closed)
+    cv2.waitKey(0)
+    (_, thresh) = cv2.threshold(closed, bin_threshold_1st, bin_threshold_2nd, cv2.THRESH_BINARY)
 
     # to find all object contours
     cnts = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -120,7 +121,7 @@ def visual(image, cnt, pixelsPerMetric, width):
     # present
     cv2.putText(original, "{:.2f}cm".format(lenA), (int(topX - 15), int(topY - 10)), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (255, 255, 255), 2)
     cv2.putText(original, "{:.2f}cm".format(lenB), (int(rightX + 10), int(rightY)), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (255, 255, 255), 2)
-
+    print(lenA,lenB)
     cv2.imshow("Image", original)
     cv2.waitKey(0)
 

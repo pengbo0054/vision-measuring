@@ -4,9 +4,9 @@ class Config(object):
     SOBEL_KERNEL_SIZE = -1
     BINARY_THRESHOLD_1ST = 80
     BINARY_THRESHOLD_2ND = 255
-    ERODE_ITER = 14
-    DILATE_ITER = 14
-    GSE_KERNEL_SIZE = 25
+    ERODE_ITER = 5
+    DILATE_ITER = 5
+    GSE_KERNEL_SIZE = 9
     AREA_THRESHOLD = 5000
 
     #Contrast ratio config
