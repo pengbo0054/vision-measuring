@@ -1,6 +1,6 @@
 import cv2
 import argparse
-
+from config import Config
 from utils import mark_countor, visual
 
 
